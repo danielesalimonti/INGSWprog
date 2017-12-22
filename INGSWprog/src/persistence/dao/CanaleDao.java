@@ -10,7 +10,7 @@ public interface CanaleDao {
 	public Canale findByPrimaryKey(String nome);
 	public List<Canale> findAll();
 	public void update(Canale canale);
-	public void dekete(Canale canale);
+	public void delete(Canale canale);
 	
 
 }
