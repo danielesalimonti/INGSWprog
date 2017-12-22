@@ -148,13 +148,52 @@ public class GruppoDaoJDBC implements GruppoDao{
 
 	@Override
 	public void update(Gruppo gruppo) {
-		// TODO Auto-generated method stub
+		Connection connection = this.dataSource.getConnection();
+		try {
+			
+			this.updateMembri(gruppo, connection); 
+			//connection.commit();
+		} catch (SQLException e) {
+			if (connection != null) {
+				try {
+					connection.rollback();
+				} catch(SQLException excep) {
+					throw new PersistenceException(e.getMessage());
+				}
+			} 
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				throw new PersistenceException(e.getMessage());
+			}
+		}
 		
 	}
 
 	@Override
 	public void delete(Gruppo gruppo) {
-		// TODO Auto-generated method stub
+		Connection connection = this.dataSource.getConnection();
+		try {
+			String delete = "delete FROM gruppo WHERE nome = ? ";
+			PreparedStatement statement = connection.prepareStatement(delete);
+			statement.setString(1, gruppo.getNome());
+
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);			
+			this.removeForeignKeyFromUtente(gruppo, connection);     			
+			
+			statement.executeUpdate();
+			connection.commit();
+		} catch (SQLException e) {
+			throw new PersistenceException(e.getMessage());
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				throw new PersistenceException(e.getMessage());
+			}
+		}
 		
 	}
 

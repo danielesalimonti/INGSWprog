@@ -126,12 +126,10 @@ public class CanaleDaoJDBC implements CanaleDao {
 		}
 	}
 	
-	private void removeForeignKeyFromGruppo(Canale canale, Connection connection) throws SQLException {
+	private void deleteGruppi(Canale canale, Connection connection) throws SQLException {
+		GruppoDao gruppoDao = new GruppoDaoJDBC(dataSource);
 		for (Gruppo gruppo : canale.getGruppi()) {
-			String update = "update gruppo_canale SET nome_canale = NULL WHERE nome_gruppo = ?";
-			PreparedStatement statement = connection.prepareStatement(update);
-			statement.setString(1, gruppo.getNome());
-			statement.executeUpdate();
+			gruppoDao.delete(gruppo);
 		}	
 	}
 
@@ -225,8 +223,29 @@ public class CanaleDaoJDBC implements CanaleDao {
 
 	@Override
 	public void delete(Canale canale) {
-		// TODO Auto-generated method stub
-		
+
+		Connection connection = this.dataSource.getConnection();
+		try {
+			String delete = "delete FROM canale WHERE nome = ? ";
+			PreparedStatement statement = connection.prepareStatement(delete);
+			statement.setString(1, canale.getNome());
+
+			connection.setAutoCommit(false);
+			connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);			
+			this.removeForeignKeyFromUtente(canale, connection);     			
+			this.deleteGruppi(canale, connection);
+			
+			statement.executeUpdate();
+			connection.commit();
+		} catch (SQLException e) {
+			throw new PersistenceException(e.getMessage());
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				throw new PersistenceException(e.getMessage());
+			}
+		}
 	}
 
 }
